@@ -135,6 +135,7 @@ int HttpMessage::on_header_value(http_parser *parser,
 int HttpMessage::on_headers_complete(http_parser *parser) {
     HttpMessage *http_message = (HttpMessage *)parser->data;
     http_message->_stage = HTTP_ON_HEADERS_COMPLETE;
+    http_message->header().set_content_length(parser->content_length);
     // Move content-type into the member field.
     const std::string* content_type = http_message->header().GetHeader("content-type");
     if (content_type) {

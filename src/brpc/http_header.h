@@ -136,6 +136,9 @@ public:
     //   "/FileService//mydir///123.txt//"   "mydir/123.txt"
     const std::string& unresolved_path() const { return _unresolved_path; }
 
+    uint64_t content_length() const { return _content_length; }
+    void set_content_length(uint64_t length) { _content_length = length; }
+
 private:
 friend class HttpMessage;
 friend class HttpMessageSerializer;
@@ -156,6 +159,7 @@ friend void policy::ProcessHttpRequest(InputMessageBase *msg);
     std::string _content_type;
     std::string _unresolved_path;
     std::pair<int, int> _version;
+    uint64_t _content_length;
 };
 
 const HttpHeader& DefaultHttpHeader();

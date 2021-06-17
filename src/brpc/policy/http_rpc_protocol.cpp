@@ -1039,6 +1039,37 @@ FindMethodPropertyByURI(const std::string& uri_path, const Server* server,
     return NULL;
 }
 
+static bool CheckHeadMethodResponse(Socket *socket) {
+    HttpContext* http_imsg = 
+        static_cast<HttpContext*>(socket->parsing_context());
+    if (http_imsg->parser().type == HTTP_RESPONSE) {
+        uint64_t cid_value = socket->correlation_id();
+        if (cid_value == 0) {
+            LOG(WARNING) << "Fail to find correlation_id from " << *socket;
+            return false;
+        }
+        const bthread_id_t cid = { cid_value };
+        Controller* cntl = NULL;
+        int rc = bthread_id_lock(cid, (void**)&cntl);
+        if (rc != 0) {
+            LOG_IF(ERROR, rc != EINVAL && rc != EPERM)
+                << "Fail to lock correlation_id=" << cid << ": " << berror(rc);
+            return false;
+        }        
+        HttpMethod method = cntl->http_request().method();
+
+        rc = bthread_id_unlock(cid);
+        if (rc != 0) {
+            LOG(ERROR) << "Fail to unlock correlation_id=" << cid << ": " 
+                << berror(rc);
+        }        
+        if (method == HTTP_METHOD_HEAD) {
+            return true;
+        }
+    }
+    return false;
+}
+
 ParseResult ParseHttpMessage(butil::IOBuf *source, Socket *socket,
                              bool read_eof, const void* /*arg*/) {
     HttpContext* http_imsg = 
@@ -1108,15 +1139,26 @@ ParseResult ParseHttpMessage(butil::IOBuf *source, Socket *socket,
                 socket->OnProgressiveReadCompleted();
             }
             return result;
-        } else if (socket->is_read_progressive() &&
-                   http_imsg->stage() >= HTTP_ON_HEADERS_COMPLETE) {
-            // header part of a progressively-read http message is complete,
-            // go on to ProcessHttpXXX w/o waiting for full body.
-            http_imsg->AddOneRefForStage2(); // released when body is fully read
-            return MakeMessage(http_imsg);
-        } else {
-            return MakeParseError(PARSE_ERROR_NOT_ENOUGH_DATA);
+        } else if (http_imsg->stage() >= HTTP_ON_HEADERS_COMPLETE) {
+            if (CheckHeadMethodResponse(socket)) {
+                // https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.4
+                // The HEAD method is identical to GET except that the server 
+                // MUST NOT return a message-body in the response.
+                CHECK_EQ(http_imsg, socket->release_parsing_context());
+                const ParseResult result = MakeMessage(http_imsg);
+                if (socket->is_read_progressive()) {
+                    socket->OnProgressiveReadCompleted();
+                }
+                return result;
+            }
+            if (socket->is_read_progressive()) {
+                // header part of a progressively-read http message is complete,
+                // go on to ProcessHttpXXX w/o waiting for full body.
+                http_imsg->AddOneRefForStage2(); // released when body is fully read
+                return MakeMessage(http_imsg);
+            }
         }
+        return MakeParseError(PARSE_ERROR_NOT_ENOUGH_DATA);
     } else if (!socket->CreatedByConnect()) {
         // Note: If the parser fails at query-string/fragment/the-following
         // -"HTTP/x.y", the message is very likely to be in http format (not

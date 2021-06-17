@@ -49,6 +49,7 @@ void HttpHeader::Swap(HttpHeader &rhs) {
     _content_type.swap(rhs._content_type);
     _unresolved_path.swap(rhs._unresolved_path);
     std::swap(_version, rhs._version);
+    std::swap(_content_length, rhs._content_length);
 }
 
 void HttpHeader::Clear() {
