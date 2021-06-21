@@ -30,6 +30,7 @@
 #if defined(__cplusplus)
 #  include <iostream>
 #  include "bthread/mutex.h"        // use bthread_mutex_t in the RAII way
+#  include "bthread/rwlock.h"       // use bthread_rwlock_t in the RAII way
 #endif
 
 #include "bthread/id.h"

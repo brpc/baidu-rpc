@@ -173,6 +173,15 @@ typedef struct {
 } bthread_condattr_t;
 
 typedef struct {
+    //高30位读计数和低2位写锁标记
+    //加写锁标记的时候要求读计数为0，
+    //获得读锁的时候要加读计数且写锁标记为0
+    //这些都要在一个原子操作中完成
+    unsigned* rc_wlock;
+    //高30位写计数和低2位读等待标记
+    //读请求看到写计数大于0，则需要等待
+    //写锁释放的时候，看到读等标记需要唤醒
+    unsigned* wc_rwait;
 } bthread_rwlock_t;
 
 typedef struct {

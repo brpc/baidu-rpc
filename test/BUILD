@@ -235,6 +235,7 @@ cc_test(
         "bthread_dispatcher_unittest.cpp",
         "bthread_fd_unittest.cpp",
         "bthread_mutex_unittest.cpp",
+        "bthread_brpc_rwlock_unittest.cpp",
         "bthread_setconcurrency_unittest.cpp",
         # glog CHECK die with a fatal error
         "bthread_key_unittest.cpp"
