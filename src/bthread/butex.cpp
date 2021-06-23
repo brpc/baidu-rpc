@@ -89,6 +89,8 @@ struct ButexWaiter : public butil::LinkNode<ButexWaiter> {
     // Erasing node from middle of LinkedList is thread-unsafe, we need
     // to hold its container's lock.
     butil::atomic<Butex*> container;
+    butil::atomic<bool> spin_lock;
+    bool start_erase_from_butex;
 };
 
 // non_pthread_task allocates this structure on stack and queue it in
@@ -465,6 +467,14 @@ inline bool erase_from_butex(ButexWaiter* bw, bool wakeup, WaiterState state) {
     bool erased = false;
     Butex* b;
     int saved_errno = errno;
+
+    // mark this ButexWaiter we start to erase it
+    if (state == WAITER_STATE_TIMEDOUT) {
+        BT_LOOP_WHEN(bw->spin_lock.exchange(true, butil::memory_order_acquire) == true, 30);
+        bw->start_erase_from_butex = true;
+        bw->spin_lock.store(false, butil::memory_order_release);
+    }
+
     while ((b = bw->container.load(butil::memory_order_acquire))) {
         // b can be NULL when the waiter is scheduled but queued.
         BAIDU_SCOPED_LOCK(b->waiter_lock);
@@ -514,9 +524,14 @@ static void wait_for_butex(void* arg) {
             bw->waiter_state = WAITER_STATE_UNMATCHEDVALUE;
         } else if (bw->waiter_state == WAITER_STATE_READY/*1*/ &&
                    !bw->task_meta->interrupted) {
-            b->waiters.Append(bw);
-            bw->container.store(b, butil::memory_order_relaxed);
-            return;
+            BT_LOOP_WHEN(bw->spin_lock.exchange(true, butil::memory_order_acquire) == true, 30);
+            if (!bw->start_erase_from_butex) {
+                b->waiters.Append(bw);
+                bw->container.store(b, butil::memory_order_relaxed);
+                bw->spin_lock.store(false, butil::memory_order_release);
+                return;
+            }
+            bw->spin_lock.store(false, butil::memory_order_release);
         }
     }
     
@@ -558,6 +573,8 @@ static int butex_wait_from_pthread(TaskGroup* g, Butex* b, int expected_value,
     TaskMeta* task = NULL;
     ButexPthreadWaiter pw;
     pw.tid = 0;
+    pw.spin_lock.store(false, butil::memory_order_relaxed);
+    pw.start_erase_from_butex = false;
     pw.sig.store(PTHREAD_NOT_SIGNALLED, butil::memory_order_relaxed);
     int rc = 0;
     
@@ -624,6 +641,8 @@ int butex_wait(void* arg, int expected_value, const timespec* abstime) {
     // tid is 0 iff the thread is non-bthread
     bbw.tid = g->current_tid();
     bbw.container.store(NULL, butil::memory_order_relaxed);
+    bbw.spin_lock.store(false, butil::memory_order_relaxed);
+    bbw.start_erase_from_butex = false;
     bbw.task_meta = g->current_task();
     bbw.sleep_id = 0;
     bbw.waiter_state = WAITER_STATE_READY;
