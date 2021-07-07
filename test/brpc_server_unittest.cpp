@@ -200,6 +200,16 @@ TEST_F(ServerTest, sanity) {
         // And release the listen port
         ASSERT_EQ(0, server.Start("127.0.0.1:8613", NULL));
     }
+    {
+        brpc::Server server;
+        brpc::ServerOptions options;
+        ASSERT_EQ(0, server.Start(brpc::PortRange(8000, 9000), &options));
+        ASSERT_TRUE(server.IsRunning());
+        ASSERT_EQ(0ul, server.service_count());
+        ASSERT_TRUE(NULL == server.first_service());
+        ASSERT_EQ(0, server.Stop(0));
+        ASSERT_EQ(0, server.Join());
+    }
 
     butil::EndPoint ep;
     MyAuthenticator auth;

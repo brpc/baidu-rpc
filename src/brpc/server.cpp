@@ -1092,6 +1092,10 @@ int Server::Start(const char* ip_str, PortRange port_range,
     return StartInternal(ip, port_range, opt);
 }
 
+int Server::Start(PortRange port_range, const ServerOptions* opt) {
+    return StartInternal(butil::IP_ANY, port_range, opt);
+}
+
 int Server::Stop(int timeout_ms) {
     if (_status != RUNNING) {
         return -1;

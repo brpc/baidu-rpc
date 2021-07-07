@@ -389,6 +389,8 @@ public:
     int Start(int port, const ServerOptions* opt);
     // Start on `ip_str' + any useable port in `range'
     int Start(const char* ip_str, PortRange range, const ServerOptions *opt);
+    // Start on IP_ANY + first useable port in `range'
+    int Start(PortRange range, const ServerOptions* opt);
 
     // NOTE: Stop() is paired with Join() to stop a server without losing
     // requests. The point of separating them is that you can Stop() multiple
