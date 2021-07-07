@@ -259,6 +259,8 @@ void SendRpcResponse(int64_t correlation_id,
         }
     }
 
+    cntl->after_resp_fn(req, res);
+
     if (span) {
         // TODO: this is not sent
         span->set_sent_us(butil::cpuwide_time_us());

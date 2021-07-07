@@ -218,6 +218,8 @@ void Controller::ResetNonPods() {
     delete _remote_stream_settings;
     _thrift_method_name.clear();
 
+    _after_resp_fn = nullptr;
+
     CHECK(_unfinished_call == NULL);
 }
 
@@ -1565,6 +1567,13 @@ void Controller::DoPrintLogPrefix(std::ostream& os) const {
     }
     if (FLAGS_log_as_json) {
         os << "\"M\":\"";
+    }
+}
+
+void Controller::after_resp_fn(const google::protobuf::Message* req, const google::protobuf::Message* res) {
+    if (_after_resp_fn) {
+        _after_resp_fn(this, req, res);
+        _after_resp_fn = nullptr;
     }
 }
 

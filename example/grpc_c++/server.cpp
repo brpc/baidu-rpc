@@ -21,6 +21,7 @@
 #include <butil/logging.h>
 #include <brpc/server.h>
 #include <brpc/restful.h>
+#include <json2pb/pb_to_json.h>
 #include "helloworld.pb.h"
 
 DEFINE_int32(port, 50051, "TCP Port of this server");
@@ -44,6 +45,18 @@ public:
             cntl->set_response_compress_type(brpc::COMPRESS_TYPE_GZIP);
         }
         res->set_message("Hello " + req->name());
+
+        // You can set a callback function after server response to client
+        cntl->set_after_resp_fn([](const brpc::Controller* cntl,
+                                   const google::protobuf::Message* req,
+                                   const google::protobuf::Message* res) {
+            std::string req_str;
+            json2pb::ProtoMessageToJson(*req, &req_str, NULL);
+            std::string res_str;
+            json2pb::ProtoMessageToJson(*res, &res_str, NULL);
+            LOG(INFO) << "req:" << req_str
+                      << " res:" << res_str;
+        });
     }
 };
 

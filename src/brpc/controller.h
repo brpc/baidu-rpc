@@ -23,6 +23,7 @@
 // on internal structures, use opaque pointers instead.
 
 #include <gflags/gflags.h>                     // Users often need gflags
+#include <functional>                          // std::function
 #include <string>
 #include "butil/intrusive_ptr.hpp"             // butil::intrusive_ptr
 #include "bthread/errno.h"                     // Redefine errno
@@ -548,6 +549,14 @@ public:
     // -1 means no deadline.
     int64_t deadline_us() const { return _deadline_us; }
 
+    using after_resp_fn_t = std::function<void(const Controller* cntl,
+                                               const google::protobuf::Message* req,
+                                               const google::protobuf::Message* res)>;
+
+    void set_after_resp_fn(after_resp_fn_t&& after_resp_fn) { _after_resp_fn = after_resp_fn; }
+
+    void after_resp_fn(const google::protobuf::Message* req, const google::protobuf::Message* res);
+
 private:
     struct CompletionInfo {
         CallId id;           // call_id of the corresponding request
@@ -799,6 +808,8 @@ private:
 
     // Thrift method name, only used when thrift protocol enabled
     std::string _thrift_method_name;
+
+    after_resp_fn_t _after_resp_fn;
 };
 
 // Advises the RPC system that the caller desires that the RPC call be

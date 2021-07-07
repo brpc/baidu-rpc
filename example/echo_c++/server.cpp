@@ -20,6 +20,7 @@
 #include <gflags/gflags.h>
 #include <butil/logging.h>
 #include <brpc/server.h>
+#include <json2pb/pb_to_json.h>
 #include "echo.pb.h"
 
 DEFINE_bool(echo_attachment, true, "Echo attachment as well");
@@ -69,6 +70,18 @@ public:
             // being serialized into protobuf messages.
             cntl->response_attachment().append(cntl->request_attachment());
         }
+
+        // You can set a callback function after server response to client
+        cntl->set_after_resp_fn([](const brpc::Controller* cntl,
+                                   const google::protobuf::Message* req,
+                                   const google::protobuf::Message* res) {
+            std::string req_str;
+            std::string res_str;
+            json2pb::ProtoMessageToJson(*req, &req_str, NULL);
+            json2pb::ProtoMessageToJson(*res, &res_str, NULL);
+            LOG(INFO) << "req:" << req_str
+                      << " res:" << res_str;
+        });
     }
 };
 }  // namespace example
