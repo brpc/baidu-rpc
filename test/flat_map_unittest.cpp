@@ -287,10 +287,13 @@ TEST_F(FlatMapTest, make_sure_all_methods_compile) {
     ASSERT_EQ(20, m1[2]);
     ASSERT_EQ(2u, m1.size());
     m1.insert(1, 100);
+    m1.insert(3, 30);
     ASSERT_EQ(100, m1[1]);
-    ASSERT_EQ(2u, m1.size());
-    ASSERT_EQ(NULL, m1.seek(3));
-    ASSERT_EQ(0u, m1.erase(3));
+    ASSERT_EQ(3u, m1.size());
+    ASSERT_TRUE(m1.seek(3));
+    ASSERT_EQ(NULL, m1.seek(4));
+    ASSERT_EQ(1u, m1.erase(3));
+    ASSERT_EQ(0u, m1.erase(4));
     ASSERT_EQ(2u, m1.size());
     ASSERT_EQ(1u, m1.erase(2));
     ASSERT_EQ(1u, m1.size());

@@ -376,6 +376,11 @@ _T* FlatMap<_K, _T, _H, _E, _S>::insert(const key_type& key,
 }
 
 template <typename _K, typename _T, typename _H, typename _E, bool _S>
+_T* FlatMap<_K, _T, _H, _E, _S>::insert(const std::pair<key_type, mapped_type>& kv) {
+    return insert(kv.first, kv.second);
+}
+
+template <typename _K, typename _T, typename _H, typename _E, bool _S>
 template <typename K2>
 size_t FlatMap<_K, _T, _H, _E, _S>::erase(const K2& key, _T* old_value) {
     if (!initialized()) {
