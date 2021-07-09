@@ -32,10 +32,12 @@ DEFINE_string(connection_type, "", "Connection type. Available values: single, p
 DEFINE_string(protocol, "baidu_std", "Protocol type. Defined in src/brpc/options.proto");
 DEFINE_string(starting_server, "0.0.0.0:8114", "IP Address of the first server, port of i-th server is `first-port + i'");
 DEFINE_string(load_balancer, "rr", "Name of load balancer");
+DEFINE_string(sub_load_balancer, "rr", "Name of load balancer used in sub channel");
 DEFINE_int32(timeout_ms, 100, "RPC timeout in milliseconds");
 DEFINE_int32(backup_ms, -1, "backup timeout in milliseconds");
 DEFINE_int32(max_retry, 3, "Max retries(not including the first RPC)"); 
 DEFINE_bool(dont_fail, false, "Print fatal when some call failed");
+DEFINE_uint64(request_code, 0, "The request code");
 
 std::string g_request;
 std::string g_attachment;
@@ -58,6 +60,7 @@ static void* sender(void* arg) {
 
         request.set_message(g_request);
         cntl.set_log_id(log_id++);  // set by user
+        cntl.set_request_code(FLAGS_request_code);
 
         if (!g_attachment.empty()) {
             // Set attachment which is wired to network directly instead of 
@@ -120,7 +123,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < 3; ++i) {
         os << butil::EndPoint(pt.ip, pt.port++) << ",";
     }
-    if (sub_channel1->Init(os.str().c_str(), FLAGS_load_balancer.c_str(),
+    if (sub_channel1->Init(os.str().c_str(), FLAGS_sub_load_balancer.c_str(),
                            &options) != 0) {
         LOG(ERROR) << "Fail to init ordinary channel";
         return -1;
@@ -153,7 +156,7 @@ int main(int argc, char* argv[]) {
 
     // Add another selective channel with default options.
     brpc::SelectiveChannel* sub_channel3 = new brpc::SelectiveChannel;
-    if (sub_channel3->Init(FLAGS_load_balancer.c_str(), NULL) != 0) {
+    if (sub_channel3->Init(FLAGS_sub_load_balancer.c_str(), NULL) != 0) {
         LOG(ERROR) << "Fail to init schan";
         return -1;
     }
@@ -165,7 +168,7 @@ int main(int argc, char* argv[]) {
             for (int j = 0; j < 3; ++j) {
                 os << butil::EndPoint(pt.ip, pt.port++) << ",";
             }
-            if (c->Init(os.str().c_str(), FLAGS_load_balancer.c_str(),
+            if (c->Init(os.str().c_str(), FLAGS_sub_load_balancer.c_str(),
                         &options) != 0) {
                 LOG(ERROR) << "Fail to init sub channel[" << i << "] of schan";
                 return -1;
