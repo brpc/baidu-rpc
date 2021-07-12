@@ -34,4 +34,13 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
+/CPackSourceConfig.cmake
+/CPackConfig.cmake
 /cmake-build-debug/
+/googletest-download/
+/googletest-src/
+/test/rpc_data/
+/test/monitor/
+/test/curl.out
+/test/out.txt
+/test/recordio_ref.io
