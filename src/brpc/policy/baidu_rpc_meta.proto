@@ -42,6 +42,7 @@ message RpcRequestMeta {
     optional int64 span_id = 5;
     optional int64 parent_span_id = 6;
     optional string request_id = 7; // correspond to x-request-id in http header
+    optional int32 timeout_ms = 8;  // client's timeout setting for current call
 }
 
 message RpcResponseMeta {

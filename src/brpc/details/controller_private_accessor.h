@@ -57,6 +57,10 @@ public:
         return _cntl->_current_call.sending_sock.get();
     }
 
+    int64_t real_timeout_ms() {
+        return _cntl->_real_timeout_ms;
+    }
+
     void move_in_server_receiving_sock(SocketUniquePtr& ptr) {
         CHECK(_cntl->_current_call.sending_sock == NULL);
         _cntl->_current_call.sending_sock.reset(ptr.release());

@@ -1305,6 +1305,8 @@ protected:
         EXPECT_EQ(1, cntl.sub_count());
         EXPECT_EQ(brpc::ERPCTIMEDOUT, cntl.sub(0)->ErrorCode());
         EXPECT_LT(labs(tm.m_elapsed() - cntl.timeout_ms()), 15);
+        EXPECT_EQ(-1, cntl.sub(0)->_timeout_ms);
+        EXPECT_EQ(17, cntl.sub(0)->_real_timeout_ms);
         StopAndJoin();
     }
     

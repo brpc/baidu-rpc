@@ -736,6 +736,8 @@ private:
     int32_t _timeout_ms;
     int32_t _connect_timeout_ms;
     int32_t _backup_request_ms;
+    // If this rpc call has retry/backup request,this var save the real timeout for current call
+    int64_t _real_timeout_ms;
     // Deadline of this RPC (since the Epoch in microseconds).
     int64_t _deadline_us;
     // Timer registered to trigger RPC timeout event

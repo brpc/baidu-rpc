@@ -317,6 +317,7 @@ int Sender::IssueRPC(int64_t start_realtime_us) {
     // No need to count timeout. We already managed timeout in schan. If
     // timeout occurs, sub calls are canceled with ERPCTIMEDOUT.
     sub_cntl->_timeout_ms = -1;
+    sub_cntl->_real_timeout_ms = _main_cntl->timeout_ms();
 
     // Inherit following fields of _main_cntl.
     // TODO(gejun): figure out a better way to maintain these fields.
